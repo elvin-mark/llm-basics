@@ -1,0 +1,5 @@
+numpy==1.26.2
+python-dotenv==1.0.0
+torch
+sentencepiece==0.1.99
+tokenizers==0.19.1
