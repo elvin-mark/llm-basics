@@ -56,8 +56,8 @@ python models/llama2.py
 python models/rwkv4.py
 ```
 
-### BERT
+### Tiny BERT
 
 ```sh
-python models/bert.py
+python models/tinybert.py
 ```
