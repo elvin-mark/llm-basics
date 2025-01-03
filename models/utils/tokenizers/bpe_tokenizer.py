@@ -2,7 +2,7 @@ import regex as re
 import json
 from functools import lru_cache
 
-from utils.encoded_data import EncodedData
+from utils.tokenizers.encoded_data import EncodedData
 
 """Byte pair encoding utilities.
 

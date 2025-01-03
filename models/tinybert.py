@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import os
 from dotenv import load_dotenv
+from utils.nn import layer_norm, ffn, mha, linear, relu
 
 load_dotenv()
 if os.getenv("TOKENIZER_TYPE", "deafult") == "default":
@@ -9,7 +10,7 @@ if os.getenv("TOKENIZER_TYPE", "deafult") == "default":
 
     Tokenizer = Tokenizer
 else:
-    from utils.word_piece_tokenizer import WordPieceTokenizer
+    from utils.tokenizers.word_piece_tokenizer import WordPieceTokenizer
 
     Tokenizer = WordPieceTokenizer
 
@@ -108,50 +109,9 @@ def load_encoder_hparams_and_params(model_path, device="cpu"):
     return hparams, params
 
 
-def gelu(x):
-    return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
-
-
-def relu(x):
-    return np.maximum(0, x)
-
-
-def softmax(x):
-    exp_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
-    return exp_x / np.sum(exp_x, axis=-1, keepdims=True)
-
-
-def layer_norm(x, g, b, eps=1e-12):
-    mean = np.mean(x, axis=-1, keepdims=True)
-    variance = np.var(x, axis=-1, keepdims=True)
-    return g * (x - mean) / np.sqrt(variance + eps) + b
-
-
-def linear(x, w, b):
-    return x @ w + b
-
-
-def ffn(x, c_fc, c_proj):
-    return linear(relu(linear(x, **c_fc)), **c_proj)
-
-
-def attention(q, k, v):
-    return softmax(q @ k.T / np.sqrt(q.shape[-1])) @ v
-
-
-def mha(x, c_attn, c_proj, n_head):
-    x = linear(x, **c_attn)
-    qkv_heads = list(
-        map(lambda x: np.split(x, n_head, axis=-1), np.split(x, 3, axis=-1))
-    )
-    out_heads = [attention(q, k, v) for q, k, v in zip(*qkv_heads)]
-    x = linear(np.hstack(out_heads), **c_proj)
-    return x
-
-
 def transformer_block(x, mlp, attn, ln_1, ln_2, n_head):
     x = layer_norm(x + mha(x, **attn, n_head=n_head), **ln_1)
-    x = layer_norm(x + ffn(x, **mlp), **ln_2)
+    x = layer_norm(x + ffn(x, **mlp, act_fn=relu), **ln_2)
     return x
 
 

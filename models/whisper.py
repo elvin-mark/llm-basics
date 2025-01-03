@@ -3,7 +3,8 @@ import numpy as np
 from dotenv import load_dotenv
 import os
 from tokenizers import Tokenizer
-from utils.audio_proc import pad, extract_fbank_features, mel_filter_bank
+from utils.features.audio_proc import pad, extract_fbank_features, mel_filter_bank
+from utils.nn import layer_norm, ffn, mha, gelu, convolution_1d
 
 load_dotenv()
 
@@ -198,54 +199,6 @@ def load_whisper_parameters(
     return hparams, params
 
 
-def gelu(x):
-    return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
-
-
-def softmax(x):
-    exp_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
-    return exp_x / np.sum(exp_x, axis=-1, keepdims=True)
-
-
-def layer_norm(x, g, b, eps=1e-5):
-    mean = np.mean(x, axis=-1, keepdims=True)
-    variance = np.var(x, axis=-1, keepdims=True)
-    return g * (x - mean) / np.sqrt(variance + eps) + b
-
-
-def linear(x, w, b):
-    return x @ w + b
-
-
-def ffn(x, c_fc, c_proj):
-    return linear(gelu(linear(x, **c_fc)), **c_proj)
-
-
-def attention(q, k, v, mask=None):
-    if mask is None:
-        return softmax(q @ k.T / np.sqrt(q.shape[-1])) @ v
-    return softmax(q @ k.T / np.sqrt(q.shape[-1]) + mask) @ v
-
-
-def mha(x, c_attn, c_proj, n_head, kv_states=None, mask_enabled=False):
-    x = linear(x, **c_attn)
-
-    if kv_states is not None:
-        qkv = []
-        dim = c_attn["w"].shape[0]
-        kv = linear(kv_states, **c_attn)
-        qkv = [x[:, :dim], kv[:, dim : 2 * dim], kv[:, 2 * dim :]]
-    else:
-        qkv = np.split(x, 3, axis=-1)
-    qkv_heads = list(map(lambda x: np.split(x, n_head, axis=-1), qkv))
-    causal_mask = None
-    if mask_enabled:
-        causal_mask = (1 - np.tri(x.shape[0], dtype=x.dtype)) * -1e10
-    out_heads = [attention(q, k, v, mask=causal_mask) for q, k, v in zip(*qkv_heads)]
-    x = linear(np.hstack(out_heads), **c_proj)
-    return x
-
-
 def transformer_block(x, mlp, attn, ln_1, ln_2, n_head, mask_enabled=False):
     x = x + mha(layer_norm(x, **ln_1), **attn, n_head=n_head, mask_enabled=mask_enabled)
     x = x + ffn(layer_norm(x, **ln_2), **mlp)
@@ -264,49 +217,10 @@ def decoder_transformer_block(
     return x
 
 
-def compute_spectrogram(audio, sample_rate, n_fft=400, hop_length=160):
-    spectrogram = np.abs(np.fft.rfft(audio, n=n_fft, axis=-1, norm="ortho")) ** 2
-    return spectrogram
-
-
-def convolution(input_tensor, weights, bias, stride=1, padding=0):
-    # Get dimensions
-    in_channels, input_length = input_tensor.shape
-    out_channels, _, kernel_size = weights.shape
-
-    # Apply padding to the input tensor
-    if padding > 0:
-        input_tensor = np.pad(
-            input_tensor,
-            ((0, 0), (padding, padding)),
-            mode="constant",
-            constant_values=0,
-        )
-
-    # Calculate output length
-    output_length = (input_length + 2 * padding - kernel_size) // stride + 1
-
-    # Extract sliding windows (using strides)
-    strided_indices = np.lib.stride_tricks.sliding_window_view(
-        input_tensor, kernel_size, axis=1
-    )
-    # Shape of strided_indices: (in_channels, output_length, kernel_size)
-    strided_indices = strided_indices[:, ::stride, :]  # Apply stride
-
-    # Perform the convolution using broadcasting and summation
-    output_tensor = np.tensordot(weights, strided_indices, axes=([1, 2], [0, 2]))
-    # Shape of output_tensor: (out_channels, output_length)
-
-    # Add bias to each output channel
-    output_tensor += bias[:, None]  # Bias broadcasted to match output shape
-
-    return output_tensor
-
-
 def whisper_encoder(audio_features, params, hparams):
     # Convolutional layers
     x = gelu(
-        convolution(
+        convolution_1d(
             audio_features,
             params["encoder"]["conv1"]["w"],
             params["encoder"]["conv1"]["b"],
@@ -314,7 +228,7 @@ def whisper_encoder(audio_features, params, hparams):
         )
     )
     x = gelu(
-        convolution(
+        convolution_1d(
             x,
             params["encoder"]["conv2"]["w"],
             params["encoder"]["conv2"]["b"],
@@ -398,5 +312,5 @@ audio_features = extract_fbank_features(
     hop_length=hop_length,
     mel_filters=mel_filters,
 )
-ids = whisper_generate(audio_features[0], params, hparams, 2)
+ids = whisper_generate(audio_features[0], params, hparams, 20)
 print(tokenizer.decode(ids))
