@@ -3,6 +3,7 @@ import numpy as np
 from dotenv import load_dotenv
 import os
 from tokenizers import Tokenizer
+from utils.audio_proc import pad, extract_fbank_features, mel_filter_bank
 
 load_dotenv()
 
@@ -14,7 +15,6 @@ def load_whisper_parameters(
     num_attention_heads=6,
     max_position_embeddings=1024,
     hidden_dim=384,
-    vocab_size=51864,
 ):
     model = torch.load(model_path, map_location="cpu")
     # Encoder
@@ -253,25 +253,12 @@ def transformer_block(x, mlp, attn, ln_1, ln_2, n_head, mask_enabled=False):
 
 
 def decoder_transformer_block(
-    x,
-    mlp,
-    attn,
-    encoder_attn,
-    ln_1,
-    ln_2,
-    ln_3,
-    n_head,
-    kv_states=None,
-    mask_enabled=False,
+    x, mlp, attn, encoder_attn, ln_1, ln_2, ln_3, n_head, kv_states=None
 ):
-    x = x + mha(layer_norm(x, **ln_1), **attn, n_head=n_head, mask_enabled=mask_enabled)
+    x = x + mha(layer_norm(x, **ln_1), **attn, n_head=n_head, mask_enabled=True)
     if kv_states is not None:
         x = x + mha(
-            layer_norm(x, **ln_2),
-            **encoder_attn,
-            kv_states=kv_states,
-            n_head=n_head,
-            mask_enabled=mask_enabled,
+            layer_norm(x, **ln_2), **encoder_attn, kv_states=kv_states, n_head=n_head
         )
     x = x + ffn(layer_norm(x, **ln_3), **mlp)
     return x
@@ -359,11 +346,7 @@ def whisper_decoder(encoder_output, input_ids, params, hparams):
     x = token_embeddings
     for layer in params["decoder"]["blocks"]:
         x = decoder_transformer_block(
-            x,
-            **layer,
-            kv_states=encoder_output,
-            n_head=hparams["n_head"],
-            mask_enabled=False,
+            x, **layer, kv_states=encoder_output, n_head=hparams["n_head"]
         )
 
     # Final layer norm
@@ -380,13 +363,40 @@ def whisper_generate(audio_features, params, hparams, n_tokens):
     for _ in range(n_tokens):
         logits = whisper_decoder(encoder_output, input_ids, params, hparams)
         next_token = np.argmax(logits[-1] @ params["proj_out"]["w"])
+        if next_token == 50256:
+            break
         input_ids.append(next_token)
-        print(input_ids)
     return input_ids
 
 
 hparams, params = load_whisper_parameters(os.getenv("WHISPER_MODEL_PATH"))
 tokenizer = Tokenizer.from_file(os.getenv("WHISPER_TOKENIZER_PATH"))
 
-x = whisper_generate(np.random.randn(80, 3000), params, hparams, 2)
-print(x)
+# Dummy audio sample
+audio_sample = np.random.randn(89600)
+
+feature_size = 80
+sampling_rate = 16000
+n_fft = 400
+hop_length = 160
+chunk_length = 30
+n_samples = chunk_length * sampling_rate
+
+mel_filters = mel_filter_bank(
+    num_frequency_bins=1 + n_fft // 2,
+    num_mel_filters=feature_size,
+    min_frequency=0.0,
+    max_frequency=8000.0,
+    sampling_rate=sampling_rate,
+    norm="slaney",
+    mel_scale="slaney",
+)
+
+audio_features = extract_fbank_features(
+    pad([audio_sample], max_length=n_samples),
+    n_fft=n_fft,
+    hop_length=hop_length,
+    mel_filters=mel_filters,
+)
+ids = whisper_generate(audio_features[0], params, hparams, 2)
+print(tokenizer.decode(ids))
