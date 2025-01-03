@@ -3,7 +3,8 @@ from torch import load
 from tokenizers import Tokenizer
 import os
 from dotenv import load_dotenv
-from utils.nn import sigmoid, layer_norm
+from utils.nn import sigmoid, layer_norm, softmax, relu
+from utils.functions import sample_probs
 
 load_dotenv()
 
@@ -35,7 +36,7 @@ def time_mixing(
 def channel_mixing(x, last_x, mix_k, mix_r, Wk, Wr, Wv):
     k = Wk @ (x * mix_k + last_x * (1 - mix_k))
     r = Wr @ (x * mix_r + last_x * (1 - mix_r))
-    vk = Wv @ np.maximum(k, 0) ** 2
+    vk = Wv @ relu(k) ** 2
     return sigmoid(r) * vk, x
 
 
@@ -59,19 +60,9 @@ def RWKV(model, token, state):
     x = layer_norm(x, *params("ln_out"))
     x = params("head")[0] @ x
 
-    e_x = exp(x - np.max(x))
-    probs = e_x / e_x.sum()
+    probs = softmax(x)
 
     return probs, state
-
-
-def sample_probs(probs, temperature=1.0, top_p=0.3):
-    sorted_probs = np.sort(probs)[::-1]
-    cumulative_probs = np.cumsum(sorted_probs)
-    cutoff = sorted_probs[np.argmax(cumulative_probs > top_p)]
-    probs[probs < cutoff] = 0
-    probs = probs ** (1 / temperature)
-    return np.random.choice(a=len(probs), p=probs / np.sum(probs))
 
 
 weights = load(MODEL_FILE, map_location="cpu")
@@ -81,24 +72,15 @@ for k in weights.keys():
     weights[k] = weights[k].float().numpy()
 
 
-interface = ":"
-user = "Question"
-bot = "Answer"
-
-init_prompt = f"""{user}{interface} hi
-
-{bot}{interface} Hi. I am your assistant and I will provide expert full response in full details. Please feel free to ask any question and I will always answer it.
-"""
-
-prompt = "What is the capital of Peru?"
-context = init_prompt + f"""\nQuestion: {prompt}\n\nAnswer: """
+context = "\nIn a shocking finding, scientist discovered a herd of dragons living in a remote, previously unexplored valley, in Tibet. Even more surprising to the researchers was the fact that the dragons spoke perfect Chinese."
 
 # Pile
 state = np.zeros((N_LAYER, 4, N_EMBD), dtype=np.float32)
 for token in tokenizer.encode(context).ids:
     probs, state = RWKV(weights, token, state)
 
-for i in range(20):
+np.random.seed(0)
+for i in range(100):
     token = sample_probs(probs)
     print(tokenizer.decode([token]), end="", flush=True)
     probs, state = RWKV(weights, token, state)

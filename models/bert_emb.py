@@ -3,6 +3,7 @@ import os
 from utils.nn import layer_norm, ffn, mha
 from dotenv import load_dotenv
 from utils.loaders.bert_emb import load_hparams_and_params
+from utils.functions import mean_pooling_and_normalization
 
 load_dotenv()
 if os.getenv("TOKENIZER_TYPE", "deafult") == "default":
@@ -13,11 +14,6 @@ else:
     from utils.tokenizers.word_piece_tokenizer import WordPieceTokenizer
 
     Tokenizer = WordPieceTokenizer
-
-
-def mean_pooling_and_normalization(x):
-    o = np.mean(x, axis=0)
-    return o / np.linalg.norm(o)
 
 
 def transformer_block(x, mlp, attn, ln_1, ln_2, n_head):
