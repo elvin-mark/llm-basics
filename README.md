@@ -34,6 +34,10 @@ This repository contains implementations and explanations of various large langu
    RWKV4_TOKENIZER_PATH="path/to/20B_tokenizer.json"
    BERT_MODEL_PATH="path/to/tinybert.bin"
    BERT_TOKENIZER_PATH="path/to/bert_tokenizer.json"
+   BERT_EMB_MODEL_PATH="path/to/bert_emb.bin"
+   BERT_EMB_TOKENIZER_PATH="path/to/tokenizer.json"
+   WHISPER_MODEL_PATH="path/to/whisper.bin"
+   WHISPER_TOKENIZER_PATH="path/to/tokenizer.json"
    ```
 
 ## Usage
@@ -60,4 +64,16 @@ python models/rwkv4.py
 
 ```sh
 python models/tinybert.py
+```
+
+### BERT Text Embedding (Text similarity)
+
+```sh
+python models/bert_emb.py
+```
+
+### Whisper
+
+```sh
+python models/whisper.py
 ```
