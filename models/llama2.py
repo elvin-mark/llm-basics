@@ -3,6 +3,7 @@ import numpy as np
 from sentencepiece import SentencePieceProcessor
 from dotenv import load_dotenv
 import os
+from utils.nn import softmax, silu, rms_norm
 
 load_dotenv()
 
@@ -99,21 +100,6 @@ temperature = 0.8
 n_tokens_to_generate = 100
 
 tokenizer = SentencePieceProcessor(model_file=os.getenv("LLAMA2_TOKENIZER_PATH"))
-
-
-def rms_norm(x):
-    return x / np.sqrt(np.square(x).mean(-1, keepdims=True) + 1e-6)
-
-
-def softmax(x):
-    return (np.exp(x - np.max(x, axis=-1, keepdims=True))) / np.sum(
-        (np.exp(x - np.max(x, axis=-1, keepdims=True))), axis=-1, keepdims=True
-    )
-
-
-def silu(x):
-    return x / (1.0 + np.exp(-x))
-
 
 prev_pos = 0
 tokens = [tokenizer.bos_id()] + tokenizer.encode(prompt)

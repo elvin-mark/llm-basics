@@ -1,6 +1,10 @@
 import numpy as np
 
 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
 def gelu(x):
     return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
 
@@ -9,9 +13,17 @@ def relu(x):
     return np.maximum(0, x)
 
 
+def silu(x):
+    return x / (1.0 + np.exp(-x))
+
+
 def softmax(x):
     exp_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
     return exp_x / np.sum(exp_x, axis=-1, keepdims=True)
+
+
+def rms_norm(x):
+    return x / np.sqrt(np.square(x).mean(-1, keepdims=True) + 1e-6)
 
 
 def layer_norm(x, g, b, eps=1e-12):

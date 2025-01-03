@@ -3,6 +3,7 @@ from torch import load
 from tokenizers import Tokenizer
 import os
 from dotenv import load_dotenv
+from utils.nn import sigmoid, layer_norm
 
 load_dotenv()
 
@@ -12,9 +13,7 @@ MODEL_FILE = os.getenv("RWKV4_MODEL_PATH")
 
 tokenizer = Tokenizer.from_file(os.getenv("RWKV4_TOKENIZER_PATH"))
 
-layer_norm = lambda x, w, b: (x - np.mean(x)) / np.std(x) * w + b
 exp = np.exp
-sigmoid = lambda x: 1 / (1 + exp(-x))
 
 
 def time_mixing(
