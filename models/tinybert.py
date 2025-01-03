@@ -1,10 +1,17 @@
 import numpy as np
 import torch
-from tokenizers import Tokenizer
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+if os.getenv("TOKENIZER_TYPE", "deafult") == "default":
+    from tokenizers import Tokenizer
+
+    Tokenizer = Tokenizer
+else:
+    from utils.word_piece_tokenizer import WordPieceTokenizer
+
+    Tokenizer = WordPieceTokenizer
 
 
 def load_encoder_hparams_and_params(model_path, device="cpu"):
