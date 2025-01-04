@@ -99,7 +99,7 @@ def convolution_1d(input_tensor, weights, bias, stride=1, padding=0):
     return output_tensor
 
 
-def convolution_2d(image, kernel, stride=2, padding=0):
+def convolution_2d(image, kernel, bias=None, stride=2, padding=0):
     # Extract dimensions
     in_channels, img_width, img_height = image.shape
     in_channels_k, out_channels, k_width, k_height = kernel.shape
@@ -139,5 +139,11 @@ def convolution_2d(image, kernel, stride=2, padding=0):
 
     # Perform the convolution
     conv_result = np.einsum("cxykh,cokh->oxy", sliding_windows, kernel)
+
+    # Add bias if provided
+    if bias is not None:
+        if bias.shape[0] != out_channels:
+            raise ValueError("Bias shape must match the number of output channels.")
+        conv_result += bias[:, None, None]
 
     return conv_result
