@@ -38,42 +38,84 @@ This repository contains implementations and explanations of various large langu
    BERT_EMB_TOKENIZER_PATH="path/to/tokenizer.json"
    WHISPER_MODEL_PATH="path/to/whisper.bin"
    WHISPER_TOKENIZER_PATH="path/to/tokenizer.json"
+   VIT_MODEL_PATH="path/to/pytorch_model.bin"
+   YOLOS_MODEL_PATH="path/to/pytorch_model.bin"
    ```
 
-## Usage
+## Usage of the different models
 
-### GPT-2
+### Text Generation
+
+#### GPT-2
+
+- Weights and Tokenizer: [openai-community/gpt2](https://huggingface.co/openai-community/gpt2)
 
 ```sh
 python models/gpt2.py
 ```
 
-### LLama2
+#### LLama2
+
+- Weights and Tokenizer: [karpathy/tinyllamas](https://huggingface.co/karpathy/tinyllamas)
 
 ```sh
 python models/llama2.py
 ```
 
-### RWKV4
+#### RWKV4
+
+- Weights and Tokenizer: [BlinkDL/rwkv-4-pile-169m](https://huggingface.co/BlinkDL/rwkv-4-pile-169m)
 
 ```sh
 python models/rwkv4.py
 ```
 
+### Question and Answering
+
 ### Tiny BERT
+
+- Weights and Tokenizer: [Intel/dynamic_tinybert](https://huggingface.co/Intel/dynamic_tinybert)
 
 ```sh
 python models/tinybert.py
 ```
 
-### BERT Text Embedding (Text similarity)
+### Text Similarity
+
+#### BERT Text Embedding
+
+- Weights and Tokenizer: [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
 
 ```sh
 python models/bert_emb.py
 ```
 
-### Whisper
+### Speech Recognition
+
+#### Whisper
+
+- Weights and Tokenizer: [openai/whisper-tiny.en](https://huggingface.co/openai/whisper-tiny.en)
 
 ```sh
 python models/whisper.py
+```
+
+### Image Classification
+
+#### ViT
+
+- Weights and Config: [WinKawaks/vit-tiny-patch16-224](https://huggingface.co/WinKawaks/vit-tiny-patch16-224)
+
+```sh
+python models/vit.py
+```
+
+### Object Detection
+
+#### YOLOs
+
+- Weights and Config: [hustvl/yolos-tiny](https://huggingface.co/hustvl/yolos-tiny)
+
+```sh
+python models/yolos.py
 ```
