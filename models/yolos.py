@@ -100,11 +100,32 @@ def yolos(inputs, embeddings, encoder_blocks, ln_f, clc_blocks, bbox_blocks, n_h
 
 hparams, params = load_hparams_and_params(os.getenv("YOLOS_MODEL_PATH"))
 
-import numpy as np
+# Dummy test
+# import numpy as np
 
-np.random.seed(0)
-x = np.random.rand(3, 400, 400)
+# np.random.seed(0)
+# x = np.random.rand(3, 400, 400)
 
-a, b = yolos(x, **params, n_head=3)
-print(a)
-print(b)
+# a, b = yolos(x, **params, n_head=3)
+# print(a)
+# print(b)
+
+from PIL import Image
+import requests
+from utils.functions import gauss_norm
+
+url = "https://images.unsplash.com/file-1705123271268-c3eaf6a79b21image?w=416&dpr=2&auto=format&fit=crop&q=60"
+image = Image.open(requests.get(url, stream=True).raw)
+
+
+raw_img = (
+    np.array(image.getdata())
+    .reshape(image.height, image.width, 3)
+    .transpose(2, 0, 1)
+    .astype(float)
+)
+raw_img = gauss_norm(raw_img / 255)
+
+classes, boxes = yolos(raw_img, **params, n_head=3)
+print(np.argmax(classes, axis=1))
+print(boxes)

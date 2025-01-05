@@ -58,3 +58,17 @@ def resize_bicubic(image, new_width, new_height):
             resized_image[:, j, i] = bicubic_interpolate(image, x, y)
 
     return resized_image
+
+
+def resize_image(image, new_height, new_width):
+    _, old_height, old_width = image.shape
+
+    row_scale = old_height / new_height
+    col_scale = old_width / new_width
+
+    row_indices = (np.arange(new_height) * row_scale).astype(int)
+    col_indices = (np.arange(new_width) * col_scale).astype(int)
+
+    resized_image = image[:, row_indices[:, None], col_indices]
+
+    return resized_image

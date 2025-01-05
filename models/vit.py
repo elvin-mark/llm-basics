@@ -80,10 +80,31 @@ def vit(inputs, embeddings, encoder_blocks, ln_f, classifier, n_head):
 
 hparams, params = load_hparams_and_params(os.getenv("VIT_MODEL_PATH"))
 
-import numpy as np
+# Test with dummy data
+# import numpy as np
 
-np.random.seed(0)
-x = np.random.rand(3, 224, 224)
+# np.random.seed(0)
+# x = np.random.rand(3, 224, 224)
 
-logits = vit(x, **params, n_head=3)
-print(logits)
+# logits = vit(x, **params, n_head=3)
+# print(logits)
+
+from PIL import Image
+import requests
+from utils.features.img_proc import resize_image
+from utils.functions import gauss_norm
+
+url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+image = Image.open(requests.get(url, stream=True).raw)
+
+raw_img = (
+    np.array(image.getdata())
+    .reshape(image.height, image.width, 3)
+    .transpose(2, 0, 1)
+    .astype(float)
+)
+raw_img = gauss_norm(raw_img / 255)
+raw_img = resize_image(raw_img, 224, 224)
+
+logits = vit(raw_img, **params, n_head=3)
+print(np.argmax(logits))
