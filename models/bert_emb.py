@@ -6,7 +6,7 @@ from utils.loaders.bert_emb import load_hparams_and_params
 from utils.functions import mean_pooling_and_normalization
 
 load_dotenv()
-if os.getenv("TOKENIZER_TYPE", "deafult") == "default":
+if os.getenv("TOKENIZER_TYPE", "default") == "default":
     from tokenizers import Tokenizer
 
     Tokenizer = Tokenizer
