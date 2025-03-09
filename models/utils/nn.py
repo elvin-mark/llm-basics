@@ -65,6 +65,25 @@ def mha(x, c_attn, c_proj, n_head, kv_states=None, mask_enabled=False):
     return x
 
 
+def mha_kv_cache(x, c_attn, c_proj, n_head, kv_cache=None, mask_enabled=False):
+    x = linear(x, **c_attn)
+
+    qkv = np.split(x, 3, axis=-1)
+    if kv_cache is not None:
+        k, v = kv_cache
+        qkv[1] = np.concatenate([k, qkv[1]], axis=0)
+        qkv[2] = np.concatenate([v, qkv[2]], axis=0)
+    kv_cache = (qkv[1], qkv[2])
+
+    qkv_heads = list(map(lambda x: np.split(x, n_head, axis=-1), qkv))
+    causal_mask = None
+    if mask_enabled:
+        causal_mask = (1 - np.tri(x.shape[0], dtype=x.dtype)) * -1e10
+    out_heads = [attention(q, k, v, mask=causal_mask) for q, k, v in zip(*qkv_heads)]
+    x = linear(np.hstack(out_heads), **c_proj)
+    return x, kv_cache
+
+
 def convolution_1d(input_tensor, weights, bias, stride=1, padding=0):
     # Get dimensions
     in_channels, input_length = input_tensor.shape
