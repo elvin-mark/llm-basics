@@ -14,8 +14,8 @@ This repository contains implementations and explanations of various large langu
 1. Clone the repository:
 
    ```sh
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/elvin-mark/llm-basics.git
+   cd llm-basics
    ```
 
 2. Install the required dependencies:
@@ -24,7 +24,7 @@ This repository contains implementations and explanations of various large langu
    pip install -r requirements.txt
    ```
 
-3. Set up the environment variables by creating a [.env](http://_vscodecontentref_/7) file in the root directory with the following content:
+3. Set up the environment variables by creating a `.env` file in the root directory with the following content:
    ```env
    GPT2_MODEL_PATH="path/to/gpt2.bin"
    GPT2_TOKENIZER_PATH="path/to/tokenizer.json"
@@ -38,6 +38,8 @@ This repository contains implementations and explanations of various large langu
    BERT_EMB_TOKENIZER_PATH="path/to/tokenizer.json"
    WHISPER_MODEL_PATH="path/to/whisper.bin"
    WHISPER_TOKENIZER_PATH="path/to/tokenizer.json"
+   MARIAN_MODEL_PATH="path/to/model.safetensors"
+   MARIAN_TOKENIZER_PATH="path/to/vocab.json"
    VIT_MODEL_PATH="path/to/pytorch_model.bin"
    YOLOS_MODEL_PATH="path/to/pytorch_model.bin"
    ```
