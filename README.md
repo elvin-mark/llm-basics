@@ -92,6 +92,16 @@ python models/tinybert.py
 python models/bert_emb.py
 ```
 
+### Machine Translation
+
+#### Marian
+
+- Weights and Tokenizer: [Mitsua/elan-mt-tiny-en-ja](https://huggingface.co/Mitsua/elan-mt-tiny-en-ja)
+
+```sh
+python models/marian.py
+```
+
 ### Speech Recognition
 
 #### Whisper
