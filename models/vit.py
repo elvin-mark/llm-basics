@@ -103,7 +103,7 @@ raw_img = (
     .transpose(2, 0, 1)
     .astype(float)
 )
-raw_img = gauss_norm(raw_img / 255)
+raw_img = (raw_img / 255.0 - 0.5) / 0.5
 raw_img = resize_image(raw_img, 224, 224)
 
 logits = vit(raw_img, **params, n_head=3)

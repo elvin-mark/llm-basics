@@ -124,7 +124,9 @@ raw_img = (
     .transpose(2, 0, 1)
     .astype(float)
 )
-raw_img = gauss_norm(raw_img / 255)
+mean = np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
+std = np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
+raw_img = (raw_img / 255.0 - mean) / std
 
 classes, boxes = yolos(raw_img, **params, n_head=3)
 print(np.argmax(classes, axis=1))
